@@ -11,8 +11,7 @@ use std::time::UNIX_EPOCH;
 use std::time::SystemTime;
 use std::io::Result;
 use std::cmp;
-use chrono::{DateTime, Utc, Local};
-use chrono::naive::NaiveDateTime;
+use chrono::prelude::*;
 
 const MAX_DEPTH: u32 = 4;
 const MAX_PROJECTS: usize = 20;
@@ -113,7 +112,7 @@ fn all_projects(projects_dir: &str) -> Result<Vec<Project>> {
 }
 
 fn format_time(modified: i64) -> String {
-    DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(modified, 0), Utc).with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string()
+    Local.timestamp(modified, 0).format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 fn main() {
