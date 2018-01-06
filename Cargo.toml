@@ -1,0 +1,8 @@
+[package]
+name = "prjs"
+version = "0.1.0"
+authors = ["John O'Malley <john.omalley@ocelotconsulting.com>"]
+
+[dependencies]
+lazy_static = "1.0"
+chrono = "0.4"
