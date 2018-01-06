@@ -11,7 +11,7 @@ use std::time::UNIX_EPOCH;
 use std::time::SystemTime;
 use std::io::Result;
 use std::cmp;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Utc, Local};
 use chrono::naive::NaiveDateTime;
 
 const MAX_DEPTH: u32 = 4;
@@ -19,7 +19,7 @@ const MAX_PROJECTS: usize = 20;
 
 struct Project {
     path: String,
-    modified: u64
+    timestamp: i64
 }
 
 lazy_static! {
@@ -35,13 +35,13 @@ fn should_exclude(dir: &DirEntry) -> bool {
     EXCLUDED_DIRS.contains(dir.file_name().to_str().unwrap_or(""))
 }
 
-fn to_timestamp(modified: SystemTime) -> u64 {
-    modified.duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)    
+fn to_timestamp(modified: SystemTime) -> i64 {
+    modified.duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0) as i64    
 }
 
-fn max_timestamp(path: &str) -> Result<u64> {
+fn max_timestamp(path: &str) -> Result<i64> {
     let entries = read_dir(path)?;
-    let mut timestamp: u64 = 0;
+    let mut timestamp: i64 = 0;
     for entry_result in entries {
         let entry = entry_result?;
         let metadata = entry.metadata()?;
@@ -62,7 +62,7 @@ fn create_project(path: &str) -> Result<Project> {
     Ok(
         Project {
             path: String::from(path),
-            modified: max_timestamp(path)?
+            timestamp: max_timestamp(path)?
         }
     )
 }
@@ -104,34 +104,23 @@ fn add_projects(projects: &mut Vec<Project>, entries: ReadDir, depth: u32) -> Re
     Ok(())
 }
 
-// fn add_projects(projects: &mut Vec<Project>, path: &str, depth: i32) -> Result<()> {
-//     if depth < MAX_DEPTH {
-//         let entries = read_entries(path)?;
-//         for entry in entries {
-
-//         }
-//     }
-// }
-
-
-fn all_projects(home_dir: &str) -> Result<Vec<Project>> {
+fn all_projects(projects_dir: &str) -> Result<Vec<Project>> {
     let mut projects: Vec<Project> = Vec::new();
-    add_projects(&mut projects, read_dir(format!("{}/projects", home_dir))?, 0)?;
-    projects.sort_by(|a, b| b.modified.cmp(&a.modified));
+    add_projects(&mut projects, read_dir(projects_dir)?, 0)?;
+    projects.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
     projects.truncate(MAX_PROJECTS);
     Ok(projects)
 }
 
-fn format_time(modified: u64) -> String {
-    Local.timestamp(modified as i64, 0).format("%Y-%m-%d %H:%M:%S").to_string()
+fn format_time(modified: i64) -> String {
+    DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(modified, 0), Utc).with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 fn main() {
     let home = env::var("HOME").expect("HOME environment variable is required");
-    let projects = all_projects(&home).expect("unable to get all projects");
-    println!("{} projects were found", projects.len());
-    println!("********************************");
+    let projects_dir = format!("{}/projects", home);
+    let projects = all_projects(&projects_dir).expect("unable to get all projects");
     for project in projects {
-        println!("{} {}", format_time(project.modified), project.path);
+        println!("{} {}", format_time(project.timestamp), &project.path[(projects_dir.len() + 1)..]);
     }
 }
