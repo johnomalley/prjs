@@ -73,10 +73,14 @@ fn to_project(entry: &DirEntry) -> Result<Option<Project>> {
     }
 }
 
+fn is_git_dir(entry: &DirEntry) -> Result<bool> {
+    Ok(entry.file_name().to_str() == Some(".git") && entry.metadata()?.is_dir())
+}
+
 fn is_project_dir(entry: &DirEntry) -> Result<bool> {
     for path_string in entry.path().to_str() {
         for child_entry in read_dir(path_string)? {
-            if child_entry?.file_name().to_str() == Some(".git") {
+            if is_git_dir(&child_entry?)? {
                 return Ok(true);
             }
         }

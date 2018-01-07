@@ -1,8 +1,9 @@
 # Projects utility
 
-This is a simple command-line utility to list your most recently modified projects.  I created this mostly as a way to get my feet wet in Rust.
+This is a simple command-line utility to list your most recently modified projects.  It assumes that your projects are in `$HOME/projects`.  
+A project is defined as a directory within with a *.git* subfolder.
 
-## example output
+## Example Output
 
 ```
 $ cargo run
